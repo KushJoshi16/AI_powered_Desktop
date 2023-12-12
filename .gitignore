@@ -5,3 +5,4 @@ metadata
 notebooks
 ipybn_checkpoints
 .DS_Store
+__pycache__
