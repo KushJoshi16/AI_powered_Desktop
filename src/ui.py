@@ -25,8 +25,11 @@ COL_COUNT = 6
 WINDOW_WIDTH = 2*LINE_SPACING + COL_COUNT*(FOLDER_WIDTH + LINE_SPACING) + 100
 WINDOW_HEIGHT = 2*LINE_SPACING + ROW_COUNT*(FOLDER_HEIGHT + LINE_SPACING) + PANEL_HEIGHT + 100
 
-PRIORITY_ROW_COUNT = 3
-PRIORITY_COL_COUNT = 1
+PRIORITY_ROW_MARGIN = 3
+PRIORITY_COL_MARGIN = 1
+
+PRIORITY_ROW_COUNT = 1
+PRIORITY_COL_COUNT = 3
 THRESHHOLD = PRIORITY_ROW_COUNT*PRIORITY_COL_COUNT
 # WINDOW_WIDTH = 800
 # WINDOW_HEIGHT = 600
@@ -47,6 +50,8 @@ class Finder_window:
         self.root.geometry(WINDOW_WIDTH.__str__()+"x"+WINDOW_HEIGHT.__str__())
         self.root.configure(bg="cyan")
 
+        self.rearrange()
+
         self.tipwindow = None
         self.folder_labels = dict()
         self.file_labels = dict()
@@ -66,6 +71,10 @@ class Finder_window:
         self.root.mainloop()
 
     def initialize_files_and_folders(self):
+        """
+        Defining an empty data structure to store the metadata of the files. 
+        If the metadata exists, it is taken from the pickle file.
+        """
         folders = None
         folder_metadata = None
         files = None
@@ -81,7 +90,9 @@ class Finder_window:
         return folders, folder_metadata, files, file_metadata
     
     def refresh_display(self):
-        
+        """
+         Updates the display as per the current state values by changing the labels.
+        """
         for folder in self.folders:
             folder_id = self.folders[folder]
             label = self.folder_labels[folder_id] 
@@ -113,6 +124,9 @@ class Finder_window:
 
 
     def get_new_folder_name(self):
+        """
+        Gives name to the new folder created by the user
+        """
         def new_name(name):
             count = 1
             while True:
@@ -126,16 +140,19 @@ class Finder_window:
         return FolderName
 
     def get_xy(self, row = 0,col = 0):
+        """To get the coordinates from the row and column position"""
         xpos = (row+1)*(LINE_SPACING + FOLDER_WIDTH) - FOLDER_WIDTH/2
         ypos = (col+1)*(LINE_SPACING + FOLDER_HEIGHT) - FOLDER_HEIGHT/2
         return xpos, ypos
     
     def get_row_col(self,x,y):
+        """To get the row and column position from the coordinates"""
         row = int((x + FOLDER_WIDTH/2)/(LINE_SPACING + FOLDER_WIDTH))
         col = int((y + FOLDER_HEIGHT/2)/(LINE_SPACING + FOLDER_HEIGHT))
         return row,col
 
     def get_next_empty_pos(self):
+        """"Gives the next empty position on the window"""
         def next_pos():
             # x_initial = 0
             # y_initial = 0
@@ -154,8 +171,28 @@ class Finder_window:
             rpos = next(pos)
         return rpos
 
+    def get_next_empty_priority_pos(self,df_dic):
+        """Gives the next empty position on the window within the priority area"""
+        def next_pos():
+            # x_initial = 0
+            # y_initial = 0
+            count = 0
+            while True:
+                row = count % PRIORITY_COL_COUNT
+                col = int(count / PRIORITY_COL_COUNT)
+                count += 1
+                yield row + PRIORITY_ROW_MARGIN, col + PRIORITY_COL_MARGIN
+        pos = next_pos()
+        rpos = next(pos)
+        rows = [value[-1] for value in self.folder_metadata.values()]
+        
+        
+        while tuple(rpos) in rows:
+            rpos = next(pos)
+        return rpos
 
     def create_Folder(self):
+        """Creates a new folder"""
         name = self.get_new_folder_name()
         pos = self.get_next_empty_pos()
         folder_id = "FOLDER_"+datetime.now().strftime('%m_%d_%Y_%H_%M_%S_').replace(':','_') + Finder_window.folder_count.__str__()
@@ -183,12 +220,14 @@ class Finder_window:
         label.pack(ipadx=1)
 
     def hidetip(self, event):
+        """To make the information disappear when the cursor moves away from the folder"""
         tw = self.tipwindow
         self.tipwindow = None
         if tw:
             tw.destroy()
 
     def create_label(self,name,pos):
+        """Creates new labels"""
         folder_id = self.folders[name]
         label = tk.Label(self.root, text=name, bg="yellow")
         row, col = pos[0], pos[1]
@@ -205,6 +244,7 @@ class Finder_window:
 
 
     def generate_all_labels(self):
+        """Generates labels for all the folders"""
         for folder in self.folders:
             folder_id = self.folders[folder]
             pos = self.folder_metadata[folder_id][-1]
@@ -213,12 +253,14 @@ class Finder_window:
 
 
     def on_left_click(self, event, foldername):
+        """Keeps track of the current position of the folder"""
         label = event.widget
         label.startX = event.x
         label.startY = event.y
 
 
     def on_double_click(self,event, foldername):
+        """Opens the folder and takes log of the time of access"""
         # label = event.widget
         # folder = label.cget("text")
         # start_time = datetime.now()
@@ -233,6 +275,7 @@ class Finder_window:
 
 
     def on_drag(self, event):
+        """Repositions the folders"""
         label = event.widget
 
         x, y = label.winfo_x() - label.startX + event.x , label.winfo_y() - label.startY + event.y
@@ -253,13 +296,14 @@ class Finder_window:
         
 
     def close_toplevel(self,folder_window,folder_id,creation_time):
-
+        """To close the open folder and store the time in metadata"""
         destruction_time = datetime.now()
         elapsed_time = destruction_time - creation_time
         self.folder_metadata[folder_id][0].append(elapsed_time)
         folder_window.destroy()
 
     def show_folder_window(self, foldername):
+        """Opens the folder and takes log of the time of access"""
         folder_window = tk.Toplevel(self.root)
         folder_window.title(foldername)
         folder_window.geometry(TOP_WINDOW_HEIGHT.__str__()+"x"+TOP_WINDOW_WIDTH.__str__())
@@ -278,28 +322,32 @@ class Finder_window:
 
 
     def save_state(self):
+        """Save the current state of desktop including metadata"""
         try:
             save_object(PIK, (self.folders, self.folder_metadata, self.files, self.file_metadata))
         except Exception as e:
             pass
 
     def close(self):
+        """Saves the state of desktop and destroys the window"""
         self.save_state()
         self.root.destroy()
 
     def rearrange(self):
-
+        """Rearranges the folders after calling the model to get priorities and labels"""
         try:
             kmeans = Model()
-            df = kmeans.fit_predict()
-            lst = sorted(df.items(),key = lambda x : x[1][-2],reverse=True)
+            df_dic = kmeans.fit_predict()
+            lst = sorted(df_dic.items(),key = lambda x : x[1][-2],reverse=True)
             count = 0
             prev = lst[0][1][-1]
             for column in lst:
                 if count > THRESHHOLD or column[1][-1] != prev:
                     break
-                pos = self.get_next_empty_priority_pos()
+                pos = self.get_next_empty_priority_pos(df_dic)
+                print(column[0],'\t',pos)
                 self.folder_metadata[column[0]] = [[],"close",pos]
+            self.refresh_display()
         except Exception as e:
             pass
             

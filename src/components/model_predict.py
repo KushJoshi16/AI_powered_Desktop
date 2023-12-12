@@ -9,6 +9,9 @@ class Model:
         self.data = DataIngestion()
     
     def get_silhouette_avg(self,X,range_n_clusters):
+        """
+        Calculates performance of clusters as per silhouette score among different n_cluster values and returns the best labels
+        """
         ms = -1
         cc = range_n_clusters[0]
         y_kmeans = None
@@ -38,6 +41,9 @@ class Model:
 
 
     def fit_predict(self):
+        """
+        Finds the best scalar function and then returns the dataframe with labels in form of a dictionary
+        """
         df = self.data.initiate_data_ingestion()
         X = df.iloc[:,[-2,-1]]
         formula_list = ['polynomial','log','exp1','default']

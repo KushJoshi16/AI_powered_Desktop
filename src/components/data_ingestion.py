@@ -21,7 +21,7 @@ class DataIngestion:
 
     def initiate_data_ingestion(self):
         """
-        Data ingestion is a class 
+        The function initiates data ingestion and takes time information to calculate aggregate time and click and store it in a dataframe along with folder metadata.
         """
         obj = load_object(self.ingestion_config.data_path)
         df = pd.DataFrame.from_dict(obj[1])
