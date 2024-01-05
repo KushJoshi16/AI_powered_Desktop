@@ -50,7 +50,6 @@ class Finder_window:
         self.root.geometry(WINDOW_WIDTH.__str__()+"x"+WINDOW_HEIGHT.__str__())
         self.root.configure(bg="cyan")
 
-        self.rearrange()
 
         self.tipwindow = None
         self.folder_labels = dict()
@@ -59,6 +58,8 @@ class Finder_window:
         self.folders, self.folder_metadata, self.files, self.file_metadata = {},{},{},{}
         self.folders, self.folder_metadata, self.files, self.file_metadata = self.initialize_files_and_folders()
         
+        self.rearrange()
+
         self.generate_all_labels()
 
         Finder_window.folder_count = len(self.folders)
@@ -181,7 +182,7 @@ class Finder_window:
                 row = count % PRIORITY_COL_COUNT
                 col = int(count / PRIORITY_COL_COUNT)
                 count += 1
-                yield row + PRIORITY_ROW_MARGIN, col + PRIORITY_COL_MARGIN
+                yield row + PRIORITY_COL_MARGIN, col + PRIORITY_ROW_MARGIN
         pos = next_pos()
         rpos = next(pos)
         rows = [value[-1] for value in self.folder_metadata.values()]
